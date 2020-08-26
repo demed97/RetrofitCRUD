@@ -1,0 +1,55 @@
+package com.android.dan.retrofitcrud.adapter
+
+import android.os.Build
+import android.text.Html
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
+import com.android.dan.retrofitcrud.R
+import com.android.dan.retrofitcrud.entity.Anecdote
+import kotlinx.android.synthetic.main.anecdote_item.view.*
+
+class AnecdoteAdapter(var anecdotes: List<Anecdote>) :
+    RecyclerView.Adapter<AnecdoteAdapter.AnecdoteViewHolder>() {
+
+    fun setAnecdoteList(newList: List<Anecdote>) {
+        val diffUtilCallback = AnecdoteDiffUtilCallback(this.anecdotes, newList)
+        val diffResult = DiffUtil.calculateDiff(diffUtilCallback)
+
+        this.anecdotes = newList
+        println("!!!!ADAPTER GET LIST $newList")
+        diffResult.dispatchUpdatesTo(this)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AnecdoteViewHolder {
+        return AnecdoteViewHolder(
+            LayoutInflater
+                .from(parent.context)
+                .inflate(
+                    R.layout.anecdote_item,
+                    parent,
+                    false
+                )
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    override fun onBindViewHolder(holder: AnecdoteViewHolder, position: Int) {
+        holder.bind(anecdotes[position])
+    }
+
+    override fun getItemCount(): Int = anecdotes.size
+
+    inner class AnecdoteViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+
+        @RequiresApi(Build.VERSION_CODES.N)
+        fun bind(anecdote: Anecdote) {
+            itemView.post_text.text =
+                Html.fromHtml(anecdote.elementPureHtml, Html.FROM_HTML_MODE_LEGACY)
+            itemView.site_text.text = anecdote.site
+        }
+    }
+}
