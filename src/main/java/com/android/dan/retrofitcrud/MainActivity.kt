@@ -1,6 +1,7 @@
 package com.android.dan.retrofitcrud
 
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkRequest
@@ -13,16 +14,21 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.android.dan.retrofitcrud.adapter.AnecdoteAdapter
 import com.android.dan.retrofitcrud.databinding.ActivityMainBinding
+import com.android.dan.retrofitcrud.entity.Anecdote
 import com.android.dan.retrofitcrud.repository.AnecdoteRepository
 import com.android.dan.retrofitcrud.viewmodel.AnecdoteViewModel
 import com.android.dan.retrofitcrud.viewmodel.ViewModelFactory
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-class MainActivity : AppCompatActivity() {
+@ExperimentalCoroutinesApi
+class MainActivity : AppCompatActivity(), AnecdoteAdapter.OnItemClickListener {
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val adapter = AnecdoteAdapter(listOf())
+        val adapter = AnecdoteAdapter(listOf(), this)
         val viewModel =
             ViewModelProvider(this, ViewModelFactory(AnecdoteRepository(application))).get(
                 AnecdoteViewModel::class.java
@@ -30,40 +36,52 @@ class MainActivity : AppCompatActivity() {
         val mainBinding = DataBindingUtil
             .setContentView<ActivityMainBinding>(this, R.layout.activity_main)
 
-        viewModel.getAllAnecdotes().observe(this, Observer {
+        viewModel.getAllAnecdotes()
+        viewModel.anecdoteLiveData.observe(this, Observer {
             adapter.setAnecdoteList(it)
-            println("!!!!! OBSERVER GET LIST: $it")
+//            println("!!!!! OBSERVER GET LIST: $it")
         })
+
         mainBinding.adapter = adapter
         mainBinding.viewModel = viewModel
 
         checkConnection(viewModel)
     }
 
-    private fun checkConnection(viewModel : AnecdoteViewModel){
+    private fun checkConnection(viewModel: AnecdoteViewModel) {
         val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkRequest = NetworkRequest.Builder()
             .build()
-        var callback = object : ConnectivityManager.NetworkCallback(){
+        var callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 viewModel.isConnected.set(true)
 
-                Toast.makeText(baseContext,"Network is available", Toast.LENGTH_LONG).show()
+                Toast.makeText(baseContext, "Network is available", Toast.LENGTH_LONG).show()
             }
 
             override fun onLost(network: Network) {
                 viewModel.isConnected.set(false)
 
-                Toast.makeText(baseContext,"Network was lost", Toast.LENGTH_LONG).show()
+                Toast.makeText(baseContext, "Network was lost", Toast.LENGTH_LONG).show()
             }
         }
 //!!!!!!!
         try {
             manager.unregisterNetworkCallback(callback)
-        }catch (e: Exception){
-            Log.w("MainActivity","NetworkCallback for Wi-fi was not registered or already unregistered")
+        } catch (e: Exception) {
+            Log.w(
+                "MainActivity",
+                "NetworkCallback for Wi-fi was not registered or already unregistered"
+            )
         }
 
-        manager.registerNetworkCallback(networkRequest,callback)
+        manager.registerNetworkCallback(networkRequest, callback)
+    }
+
+    override fun onItemClick(anecdote: Anecdote) {
+        startActivity(
+            Intent(this, DetailsActivity::class.java)
+                .putExtra("anecdote", anecdote)
+        )
     }
 }

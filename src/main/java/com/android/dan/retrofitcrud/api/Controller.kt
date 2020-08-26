@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class Controller {
 
-    fun getApiArguments() : AnecdoteApi{
+    fun getApiArguments(): AnecdoteApi {
         val retrofit = Retrofit.Builder()
             .baseUrl("http://umorili.herokuapp.com")
             .addConverterFactory(GsonConverterFactory.create())

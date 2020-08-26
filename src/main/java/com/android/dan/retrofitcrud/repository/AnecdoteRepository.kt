@@ -1,74 +1,52 @@
 package com.android.dan.retrofitcrud.repository
 
 import android.app.Application
-import android.os.AsyncTask
 import android.util.Log
-import androidx.lifecycle.LiveData
 import com.android.dan.retrofitcrud.api.Controller
 import com.android.dan.retrofitcrud.database.AnecdoteDao
 import com.android.dan.retrofitcrud.database.AnecdoteDatabase
 import com.android.dan.retrofitcrud.entity.Anecdote
-import retrofit2.Call
-import retrofit2.Response
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
+@ExperimentalCoroutinesApi
 class AnecdoteRepository(application: Application) {
 
     private var dao: AnecdoteDao
+
+    private var allAnecdotesList = mutableListOf<Anecdote>()
+
+    private val allAnecdotesStateFlow = MutableStateFlow(allAnecdotesList.toList())
+
 
     init {
         val database = AnecdoteDatabase.getDatabase(application)!!
         dao = database.getAnecdoteDao()
     }
 
-    companion object {
-        class AddDataAsync(private val anecdoteDao: AnecdoteDao) :
-            AsyncTask<List<Anecdote>, Unit, Unit>() {
-            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            override fun doInBackground(vararg p0: List<Anecdote>?) {
-                anecdoteDao.addAnecdotes(p0[0]!!)
-                Log.w("AnekdotRepository", "!!!!! addDataAsync is run")
-            }
-        }
-
-        class GetAllDataAsync(private val anecdoteDao: AnecdoteDao) :
-            AsyncTask<Unit, Unit, LiveData<List<Anecdote>>>() {
-            override fun doInBackground(vararg p0: Unit?): LiveData<List<Anecdote>> {
-                return anecdoteDao.getAllAnecdotes()
-                Log.w("AnecdoteRepository", "!!!!! getAllDataAsync is run")
-            }
-        }
-
-        class DeleteAllDataAsync(private val anecdoteDao: AnecdoteDao) :
-            AsyncTask<Unit, Unit, Unit>() {
-            override fun doInBackground(vararg p0: Unit?) {
-                anecdoteDao.deleteAllAnecdotes()
-            }
-        }
+    private suspend fun addData(anecdoteList: List<Anecdote>) {
+        dao.addAnecdotes(anecdoteList)
+        allAnecdotesStateFlow.value = anecdoteList.toList()
     }
 
-    fun loadAndPutInDatabase(){
-        Log.w("AnecdoteRepository","!!!!! loadAndPutInDatabase is run")
+    suspend fun getAnecdotes(): StateFlow<List<Anecdote>> {
+        allAnecdotesList = dao.getAllAnecdotes().toMutableList()
+        allAnecdotesStateFlow.value = allAnecdotesList.toList()
+        return allAnecdotesStateFlow
+    }
+
+    private suspend fun deleteAllData() {
+        dao.deleteAllAnecdotes()
+    }
+
+    suspend fun loadAndPutInDatabase() {
+        Log.w("AnecdoteRepository", "!!!!! loadAndPutInDatabase is run")
 //!!!!!!!!!!!!!
-        Controller().getApiArguments().getAnecdotes("new anekdot",10)
-            .enqueue(object : retrofit2.Callback<List<Anecdote>> {
-                override fun onFailure(call: Call<List<Anecdote>>, t: Throwable) {
-                    Log.e("AnecdoteRepository","!!!!! onFailure",t)
+        val list = Controller().getApiArguments().getAnecdotes("new anekdot", 10)
 
-                }
-
-                override fun onResponse(
-                    call: Call<List<Anecdote>>,
-                    response: Response<List<Anecdote>>
-                ) {
-                    DeleteAllDataAsync(dao).execute()
-                    AddDataAsync(dao).execute(response.body())
-
-                    Log.w("AnecdoteRepository","!!!!! onResponse, list is: ${response.body()}")
-                }
-            })
-    }
-
-    fun getAnecdotes() : LiveData<List<Anecdote>>{
-        return GetAllDataAsync(dao).execute().get()
+        deleteAllData()
+        addData(list)
+        Log.w("AnecdoteRepository", "!!!!! onResponse, list is: ")
     }
 }

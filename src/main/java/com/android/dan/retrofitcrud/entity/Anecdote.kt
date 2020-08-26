@@ -1,8 +1,11 @@
 package com.android.dan.retrofitcrud.entity
 
+import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.android.parcel.Parcelize
 
+@Parcelize
 @Entity
 data class Anecdote (
     val site: String,
@@ -12,4 +15,4 @@ data class Anecdote (
     val elementPureHtml: String,
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
-)
+) : Parcelable

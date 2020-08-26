@@ -12,7 +12,10 @@ import com.android.dan.retrofitcrud.R
 import com.android.dan.retrofitcrud.entity.Anecdote
 import kotlinx.android.synthetic.main.anecdote_item.view.*
 
-class AnecdoteAdapter(var anecdotes: List<Anecdote>) :
+class AnecdoteAdapter(
+    private var anecdotes: List<Anecdote>,
+    private val onItemClickListener: OnItemClickListener
+) :
     RecyclerView.Adapter<AnecdoteAdapter.AnecdoteViewHolder>() {
 
     fun setAnecdoteList(newList: List<Anecdote>) {
@@ -22,6 +25,7 @@ class AnecdoteAdapter(var anecdotes: List<Anecdote>) :
         this.anecdotes = newList
         println("!!!!ADAPTER GET LIST $newList")
         diffResult.dispatchUpdatesTo(this)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AnecdoteViewHolder {
@@ -32,7 +36,8 @@ class AnecdoteAdapter(var anecdotes: List<Anecdote>) :
                     R.layout.anecdote_item,
                     parent,
                     false
-                )
+                ),
+            onItemClickListener
         )
     }
 
@@ -43,13 +48,23 @@ class AnecdoteAdapter(var anecdotes: List<Anecdote>) :
 
     override fun getItemCount(): Int = anecdotes.size
 
-    inner class AnecdoteViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class AnecdoteViewHolder(
+        view: View,
+        private val onItemClickListener: OnItemClickListener
+    ) : RecyclerView.ViewHolder(view) {
 
         @RequiresApi(Build.VERSION_CODES.N)
         fun bind(anecdote: Anecdote) {
             itemView.post_text.text =
                 Html.fromHtml(anecdote.elementPureHtml, Html.FROM_HTML_MODE_LEGACY)
             itemView.site_text.text = anecdote.site
+            itemView.setOnClickListener {
+                onItemClickListener.onItemClick(anecdote)
+            }
         }
+    }
+
+    interface OnItemClickListener {
+        fun onItemClick(anecdote: Anecdote)
     }
 }

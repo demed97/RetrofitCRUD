@@ -1,6 +1,5 @@
 package com.android.dan.retrofitcrud.database
 
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -11,11 +10,11 @@ import com.android.dan.retrofitcrud.entity.Anecdote
 interface AnecdoteDao {
 
     @Query("SELECT * FROM anecdote")
-    fun getAllAnecdotes(): LiveData<List<Anecdote>>
+    suspend fun getAllAnecdotes(): List<Anecdote>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addAnecdotes(anecdoteList: List<Anecdote>)
+    suspend fun addAnecdotes(anecdoteList: List<Anecdote>)
 
     @Query("DELETE FROM anecdote")
-    fun deleteAllAnecdotes()
+    suspend fun deleteAllAnecdotes()
 }
